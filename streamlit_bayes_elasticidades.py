@@ -429,12 +429,15 @@ with tab_diag:
     # ======================================================
     # 0) Seleciona a base correta
     # ======================================================
+    base = df.copy()  # usa df sempre como padrão
+    
+    if 'df_muni' in globals():
+        base = df_muni
     if 'df_final' in globals():
         base = df_final
-    elif 'df_muni' in globals():
-        base = df_muni
-    else:
-        base = df
+    
+    df_final = base.copy()
+
 
     # Agora sim criamos df_final
     df_final = base.copy()
