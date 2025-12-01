@@ -279,27 +279,147 @@ a compreender por que as transformações logarítmicas são necessárias e por 
 </div>
 """, unsafe_allow_html=True)
 
+
 # =============================================================================
-# TAB 2 — PRIOR × POSTERIOR (versão reduzida)
+# TAB 2 — PRIOR × POSTERIOR (Versão Leve + IC)
 # =============================================================================
 with tab_betas:
     st.markdown('<div class="section">', unsafe_allow_html=True)
-    st.subheader("Comparação Prior × Posterior (reduzida)")
+    st.subheader("Comparação Prior × Posterior — Versão Leve")
 
-    fig = make_subplots(rows=1, cols=len(veics), subplot_titles=veics)
+    fig = make_subplots(
+        rows=1,
+        cols=len(veics),
+        subplot_titles=[f"{v}" for v in veics]
+    )
 
     for i, v in enumerate(veics):
+
+        # -----------------------------
+        # PRIOR
+        # -----------------------------
         prior_vals = np.random.normal(mu_beta_prior[i], sigma_beta_prior[i], 5000)
         kde_prior = gaussian_kde(prior_vals)
-        x_grid = np.linspace(prior_vals.min(), prior_vals.max(), 300)
+
+        # Posterior (reduzida)
+        post_vals = post_beta[i]
+        kde_post = gaussian_kde(post_vals)
+
+        # Grade comum
+        x_grid = np.linspace(
+            min(prior_vals.min(), post_vals.min()),
+            max(prior_vals.max(), post_vals.max()),
+            300
+        )
+
+        # Densidades
         prior_density = kde_prior(x_grid)
+        post_density  = kde_post(x_grid)
 
-        fig.add_trace(go.Scatter(x=x_grid, y=prior_density, mode="lines", line=dict(color="gray")), row=1, col=i+1)
-        fig.add_trace(go.Scatter(x=[post_beta_mean[i]], y=[0], mode="markers", marker=dict(color="red", size=12)), row=1, col=i+1)
+        # IC e média posterior
+        ci_low, ci_high = np.percentile(post_vals, [2.5, 97.5])
+        post_mean = np.mean(post_vals)
 
-    fig.update_layout(height=450, template=PLOTLY_TEMPLATE, title="Prior × Posterior (médias)")
+        # -----------------------------
+        # CURVA PRIOR
+        # -----------------------------
+        fig.add_trace(
+            go.Scatter(
+                x=x_grid,
+                y=prior_density,
+                mode="lines",
+                line=dict(color="gray", width=2),
+                name="Prior" if i == 0 else None
+            ),
+            row=1, col=i+1
+        )
+
+        # -----------------------------
+        # CURVA POSTERIOR
+        # -----------------------------
+        fig.add_trace(
+            go.Scatter(
+                x=x_grid,
+                y=post_density,
+                mode="lines",
+                line=dict(color="crimson", width=2),
+                name="Posterior" if i == 0 else None
+            ),
+            row=1, col=i+1
+        )
+
+        # -----------------------------
+        # MÉDIA POSTERIOR (linha vertical)
+        # -----------------------------
+        fig.add_trace(
+            go.Scatter(
+                x=[post_mean, post_mean],
+                y=[0, max(post_density)*1.05],
+                mode="lines",
+                line=dict(color="crimson", width=1.5, dash="dash"),
+                showlegend=False
+            ),
+            row=1, col=i+1
+        )
+
+        # -----------------------------
+        # INTERVALO DE CREDIBILIDADE 95%
+        # -----------------------------
+        fig.add_trace(
+            go.Scatter(
+                x=[ci_low, ci_high],
+                y=[0, 0],
+                mode="lines",
+                line=dict(color="crimson", width=6),
+                opacity=0.35,
+                showlegend=False
+            ),
+            row=1, col=i+1
+        )
+
+        # Labels
+        fig.update_xaxes(title_text="Elasticidade", row=1, col=i+1)
+        fig.update_yaxes(title_text="Densidade", row=1, col=i+1)
+
+    fig.update_layout(
+        height=450,
+        template=PLOTLY_TEMPLATE,
+        title="Prior × Posterior — Distribuições e Intervalos",
+        showlegend=True,
+        legend=dict(orientation="h", y=-0.25)
+    )
+
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================================================================
+    # TEXTO EXPLICATIVO
+    # ================================================================
+    st.markdown("""
+<div class='section'>
+<h4>📘 Interpretação da Prior × Posterior</h4>
+
+<p>
+A comparação entre a <b>prior</b> e a <b>posterior</b> permite avaliar quanto a evidência dos dados 
+atualizou o conhecimento prévio sobre os coeficientes de elasticidade.
+</p>
+
+<ul>
+<li>A curva cinza representa a <b>distribuição prior</b>, definida antes de observar os dados.</li>
+<li>A curva vermelha representa a <b>posterior</b>, resultado da atualização Bayesiana.</li>
+<li>A linha vertical vermelha tracejada mostra a <b>média posterior</b>.</li>
+<li>A barra horizontal indica o <b>intervalo de credibilidade de 95%</b>.</li>
+</ul>
+
+<p>
+Quando a posterior se afasta da prior, significa que os dados contêm 
+informação relevante para atualizar o parâmetro, reduzindo incerteza e deslocando a crença.
+Caso contrário, a prior domina e a elasticidade não é bem identificada pelos dados.
+</p>
+
+</div>
+""", unsafe_allow_html=True)
+
 
 # =============================================================================
 # TAB 3 — DIAGNÓSTICOS
