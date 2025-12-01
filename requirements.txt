@@ -8,3 +8,5 @@ scipy==1.11.4
 pymc==5.10.4
 arviz==0.16.1
 bz2file==0.98
+cloudpickle==2.2.1
+
