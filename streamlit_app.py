@@ -122,6 +122,20 @@ with tab_eda:
     fig_hist.update_layout(height=1200, template=PLOTLY_TEMPLATE, title="Distribuição Original e Log")
     st.plotly_chart(fig_hist, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("""
+<div class='section'>
+<h4>📘 Interpretação do Gráfico – Distribuição Original × Log-transformada</h4>
+<p>
+Este conjunto de histogramas compara as distribuições originais das variáveis de frota (Caminhão, Ciclomotor, Automóvel) e do PIB Industrial com suas versões log-transformadas. A transformação logarítmica é fundamental porque reduz a assimetria e estabiliza a variância, permitindo que relações multiplicativas se tornem aproximadamente lineares. 
+</p>
+<p>
+No modelo Bayesiano Gamma utilizado neste estudo, a variável resposta exige positividade e frequentemente apresenta cauda longa à direita — exatamente o que observamos nos histogramas originais. Ao aplicar o log, a distribuição torna-se mais simétrica e adequada à modelagem, reforçando a justificativa para o uso da família Gamma e da modelagem log-linear.
+</p>
+<p>
+Assim, este gráfico demonstra visualmente por que a transformação log foi escolhida e confirma empiricamente a adequação do modelo.
+</p>
+</div>
+""", unsafe_allow_html=True)
 
 # =============================================================================
 # TAB 2 — PRIOR × POSTERIOR (versão reduzida)
