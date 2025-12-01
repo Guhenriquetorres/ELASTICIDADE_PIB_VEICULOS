@@ -65,18 +65,19 @@ hr{margin:.6rem 0 1rem 0;border-color:rgba(0,0,0,.08)}
 # =============================================================================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("/content/drive/MyDrive/PI2-BAYES/df_2021.csv")
+    # Carregar base
+    df = pd.read_csv("df_2021.csv")
 
-    with open("/content/drive/MyDrive/PI2-BAYES/trace_multi.pkl", "rb") as f:
+    # Carregar trace compactado
+    import bz2, pickle
+    with bz2.BZ2File("trace_multi.pbz2", "rb") as f:
         trace_multi = pickle.load(f)
 
-    with open("/content/drive/MyDrive/PI2-BAYES/metadata.pkl", "rb") as f:
+    # Carregar metadata
+    with open("metadata.pkl", "rb") as f:
         meta = pickle.load(f)
 
     return df, trace_multi, meta
-
-
-df, trace_multi, meta = load_data()
 
 veics = meta["veics"]
 mu_beta_prior = meta["mu_beta_prior"]
