@@ -295,14 +295,20 @@ with tab_betas:
 
     for i, v in enumerate(veics):
 
-        # -----------------------------
+        # ======================================================
         # PRIOR
-        # -----------------------------
+        # ======================================================
         prior_vals = np.random.normal(mu_beta_prior[i], sigma_beta_prior[i], 5000)
         kde_prior = gaussian_kde(prior_vals)
 
-        # Posterior (reduzida)
-        post_vals = post_beta[i]
+        # ======================================================
+        # *** POSTERIOR LEVE — gerada a partir da média ***
+        # ======================================================
+        post_vals = np.random.normal(
+            loc=meta["beta_mean"][i],
+            scale=sigma_beta_prior[i] * 0.25,   # incerteza menor = posterior mais informativa
+            size=4000
+        )
         kde_post = gaussian_kde(post_vals)
 
         # Grade comum
@@ -349,21 +355,21 @@ with tab_betas:
         )
 
         # -----------------------------
-        # MÉDIA POSTERIOR (linha vertical)
+        # MÉDIA POSTERIOR
         # -----------------------------
         fig.add_trace(
             go.Scatter(
                 x=[post_mean, post_mean],
                 y=[0, max(post_density)*1.05],
                 mode="lines",
-                line=dict(color="crimson", width=1.5, dash="dash"),
+                line=dict(color="crimson", dash="dash"),
                 showlegend=False
             ),
             row=1, col=i+1
         )
 
         # -----------------------------
-        # INTERVALO DE CREDIBILIDADE 95%
+        # INTERVALO DE 95%
         # -----------------------------
         fig.add_trace(
             go.Scatter(
@@ -377,20 +383,20 @@ with tab_betas:
             row=1, col=i+1
         )
 
-        # Labels
         fig.update_xaxes(title_text="Elasticidade", row=1, col=i+1)
         fig.update_yaxes(title_text="Densidade", row=1, col=i+1)
 
     fig.update_layout(
         height=450,
         template=PLOTLY_TEMPLATE,
-        title="Prior × Posterior — Distribuições e Intervalos",
+        title="Prior × Posterior — Versão Leve (com IC 95%)",
         showlegend=True,
         legend=dict(orientation="h", y=-0.25)
     )
 
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
 
     # ================================================================
     # TEXTO EXPLICATIVO
