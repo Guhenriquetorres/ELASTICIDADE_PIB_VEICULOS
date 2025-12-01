@@ -158,7 +158,7 @@ with tab_eda:
     # ================================
     st.markdown("""
 <div class='section'>
-<h4>📘 Distribuição Original × Log-transformada</h4>
+<h4> Distribuição Original × Log-transformada</h4>
 <p>
 As variáveis de frota e o PIB Industrial apresentam forte assimetria à direita, típica de dados econômicos municipais.
 A transformação logarítmica reduz essa assimetria e melhora a estabilização da variância, permitindo:
@@ -210,7 +210,7 @@ Este gráfico confirma empiricamente a necessidade do log antes da modelagem Bay
     # ================================
     st.markdown("""
 <div class='section'>
-<h4>📘 Matriz de Correlação</h4>
+<h4> Matriz de Correlação</h4>
 <p>
 A matriz de correlação revela associações lineares entre os tipos de veículos e o PIB Industrial.
 Os valores positivos encontrados fazem sentido econométrico: municípios com maior frota tendem a possuir
@@ -285,7 +285,7 @@ a compreender por que as transformações logarítmicas são necessárias e por 
 # =============================================================================
 with tab_betas:
     st.markdown('<div class="section">', unsafe_allow_html=True)
-    st.subheader("Comparação Prior × Posterior — Versão Leve")
+    st.subheader("Comparação Prior × Posterior")
 
     fig = make_subplots(
         rows=1,
@@ -501,7 +501,7 @@ with tab_diag:
     # ================================
     st.markdown("""
 <div class='section'>
-<h4>📘 Observado × Previsto</h4>
+<h4> Observado × Previsto</h4>
 <p>
 Este gráfico avalia a qualidade do ajuste do modelo Bayesiano Gamma ao comparar diretamente os valores
 observados do PIB industrial municipal com as previsões obtidas pela média posterior.
@@ -569,7 +569,7 @@ a adequação da estrutura log-linear para dados com forte assimetria e alta var
     # ================================
     st.markdown("""
 <div class='section'>
-<h4>📘 Distribuição dos Resíduos</h4>
+<h4>Distribuição dos Resíduos</h4>
 <p>
 Este gráfico permite analisar se os resíduos do modelo apresentam algum padrão sistemático.
 No contexto de um modelo Bayesiano Gamma com link log, não esperamos simetria perfeita —
