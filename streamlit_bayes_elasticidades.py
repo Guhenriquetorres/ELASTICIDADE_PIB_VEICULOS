@@ -79,11 +79,16 @@ def load_data():
 
     return df, trace_multi, meta
 
+# --- CHAMAR A FUNÇÃO PARA CARREGAR OS ARQUIVOS ---
+df, trace_multi, meta = load_data()
+
+# --- AGORA SIM: USAR meta E trace_multi ---
 veics = meta["veics"]
 mu_beta_prior = meta["mu_beta_prior"]
 sigma_beta_prior = meta["sigma_beta_prior"]
 
 post_beta = trace_multi.posterior["beta"].stack(draws=("chain","draw")).values
+
 
 
 # =============================================================================
