@@ -5,5 +5,5 @@ matplotlib==3.8.2
 seaborn==0.13.0
 plotly==5.22.0
 scipy==1.11.4
-pymc==5.10.4
 arviz==0.16.1
+bz2file==0.98
