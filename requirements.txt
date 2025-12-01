@@ -1,9 +1,10 @@
-bz2file==0.98
-scipy==1.11.4
+streamlit==1.37.0
+pandas==2.1.4
 numpy==1.26.4
-pandas==2.2.2
+matplotlib==3.8.0
+seaborn==0.13.0
 plotly==5.22.0
-streamlit==1.41.1
-arviz==0.18.0
-matplotlib==3.8.4
-seaborn==0.13.2
+scipy==1.11.4
+pymc==5.10.4
+arviz==0.16.1
+bz2file==0.98
