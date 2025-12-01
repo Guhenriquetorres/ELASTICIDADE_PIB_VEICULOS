@@ -89,12 +89,15 @@ tab_eda, tab_betas, tab_diag, tab_interp = st.tabs([
 ])
 
 # =============================================================================
-# TAB 1 — EDA
+# TAB 1 — EDA COMPLETA
 # =============================================================================
 with tab_eda:
     st.markdown('<div class="section">', unsafe_allow_html=True)
     st.subheader("Exploração dos Dados — EDA")
 
+    # ================================
+    # LOG-TRANSFORMAÇÕES
+    # ================================
     df["log_caminhao"]   = np.log1p(df["CAMINHAO"])
     df["log_ciclomotor"] = np.log1p(df["CICLOMOTOR"])
     df["log_automovel"]  = np.log1p(df["AUTOMOVEL"])
@@ -102,6 +105,9 @@ with tab_eda:
 
     vals = df["vl_industria"]
 
+    # ================================
+    # MÉTRICAS RESUMO
+    # ================================
     c1, c2, c3, c4 = st.columns(4)
     c1.markdown(f'<div class="metric-card"><div class="small">Observações</div><h3>{len(vals):,}</h3></div>', unsafe_allow_html=True)
     c2.markdown(f'<div class="metric-card"><div class="small">Média</div><h3>{vals.mean():,.0f}</h3></div>', unsafe_allow_html=True)
@@ -110,29 +116,165 @@ with tab_eda:
 
     st.markdown("<hr/>", unsafe_allow_html=True)
 
-    # Histogramas
-    fig_hist = make_subplots(rows=4, cols=2)
+    # ================================
+    # HISTOGRAMAS ORIGINAL × LOG
+    # ================================
     vars_original = ["CAMINHAO", "CICLOMOTOR", "AUTOMOVEL", "vl_industria"]
-    vars_log = ["log_caminhao", "log_ciclomotor", "log_automovel", "log_industria"]
+    vars_log      = ["log_caminhao", "log_ciclomotor", "log_automovel", "log_industria"]
+
+    fig_hist = make_subplots(rows=4, cols=2)
 
     for i in range(4):
-        fig_hist.add_trace(go.Histogram(x=df[vars_original[i]], nbinsx=40), row=i+1, col=1)
-        fig_hist.add_trace(go.Histogram(x=df[vars_log[i]], nbinsx=40), row=i+1, col=2)
+        fig_hist.add_trace(
+            go.Histogram(
+                x=df[vars_original[i]],
+                nbinsx=40,
+                marker=dict(color="#4C72B0"),
+                opacity=0.75
+            ),
+            row=i+1, col=1
+        )
+        fig_hist.add_trace(
+            go.Histogram(
+                x=df[vars_log[i]],
+                nbinsx=40,
+                marker=dict(color="#55A868"),
+                opacity=0.75
+            ),
+            row=i+1, col=2
+        )
 
-    fig_hist.update_layout(height=1200, template=PLOTLY_TEMPLATE, title="Distribuição Original e Log")
+    fig_hist.update_layout(
+        height=1200,
+        template=PLOTLY_TEMPLATE,
+        title="Distribuição Original e Log-transformada"
+    )
+
     st.plotly_chart(fig_hist, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================================
+    # COMENTÁRIO — HISTOGRAMAS
+    # ================================
     st.markdown("""
 <div class='section'>
-<h4>📘 Interpretação do Gráfico – Distribuição Original × Log-transformada</h4>
+<h4>📘 Distribuição Original × Log-transformada</h4>
 <p>
-Este conjunto de histogramas compara as distribuições originais das variáveis de frota (Caminhão, Ciclomotor, Automóvel) e do PIB Industrial com suas versões log-transformadas. A transformação logarítmica é fundamental porque reduz a assimetria e estabiliza a variância, permitindo que relações multiplicativas se tornem aproximadamente lineares. 
+As variáveis de frota e o PIB Industrial apresentam forte assimetria à direita, típica de dados econômicos municipais.
+A transformação logarítmica reduz essa assimetria e melhora a estabilização da variância, permitindo:
+</p>
+<ul>
+<li>linearização de relações multiplicativas,</li>
+<li>melhor adequação ao modelo Gamma,</li>
+<li>posteriores mais estáveis e interpretáveis.</li>
+</ul>
+<p>
+Este gráfico confirma empiricamente a necessidade do log antes da modelagem Bayesiana.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+
+    # =============================================================================
+    # HEATMAP DE CORRELAÇÃO
+    # =============================================================================
+    st.markdown('<div class="section">', unsafe_allow_html=True)
+    st.subheader("Correlação entre Variáveis")
+
+    cols_corr = ["CAMINHAO", "CICLOMOTOR", "AUTOMOVEL", "vl_industria"]
+    corr = df[cols_corr].corr()
+
+    fig_corr = go.Figure(
+        data=go.Heatmap(
+            z=corr.values,
+            x=corr.columns,
+            y=corr.columns,
+            colorscale="RdBu",
+            reversescale=True,
+            zmid=0,
+            colorbar=dict(title="Correlação")
+        )
+    )
+
+    fig_corr.update_layout(
+        height=500,
+        template=PLOTLY_TEMPLATE,
+        title="Matriz de Correlação — Frotas × PIB Industrial"
+    )
+
+    st.plotly_chart(fig_corr, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================================
+    # COMENTÁRIO — HEATMAP
+    # ================================
+    st.markdown("""
+<div class='section'>
+<h4>📘 Matriz de Correlação</h4>
+<p>
+A matriz de correlação revela associações lineares entre os tipos de veículos e o PIB Industrial.
+Os valores positivos encontrados fazem sentido econométrico: municípios com maior frota tendem a possuir
+maior dinamismo produtivo.
 </p>
 <p>
-No modelo Bayesiano Gamma utilizado neste estudo, a variável resposta exige positividade e frequentemente apresenta cauda longa à direita — exatamente o que observamos nos histogramas originais. Ao aplicar o log, a distribuição torna-se mais simétrica e adequada à modelagem, reforçando a justificativa para o uso da família Gamma e da modelagem log-linear.
-</p>
+O destaque fica para:
+<ul>
+<li><b>Automóveis</b> – maior correlação com o PIB;</li>
+<li><b>Ciclomotores</b> – sinalizando microatividade urbana;</li>
+<li><b>Caminhões</b> – indicando capacidade logística industrial.</li>
+</ul>
 <p>
-Assim, este gráfico demonstra visualmente por que a transformação log foi escolhida e confirma empiricamente a adequação do modelo.
+Esse gráfico justifica a escolha das variáveis no modelo Bayesiano e antecipa o comportamento das elasticidades.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+
+
+    # =============================================================================
+    # BOXPLOTS (PADRÃO PROFISSIONAL)
+    # =============================================================================
+    st.markdown('<div class="section">', unsafe_allow_html=True)
+    st.subheader("Distribuições — Boxplots")
+
+    df_box = df[["CAMINHAO", "CICLOMOTOR", "AUTOMOVEL", "vl_industria"]].copy()
+    df_box = df_box.melt(var_name="Variável", value_name="Valor")
+
+    fig_box = px.box(
+        df_box,
+        x="Variável",
+        y="Valor",
+        template="plotly_white",
+        points="outliers",
+        color="Variável",
+        color_discrete_sequence=px.colors.qualitative.Set2
+    )
+
+    fig_box.update_layout(
+        height=500,
+        title="Distribuição das Variáveis — Boxplot"
+    )
+
+    st.plotly_chart(fig_box, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================================
+    # COMENTÁRIO — BOXPLOTS
+    # ================================
+    st.markdown("""
+<div class='section'>
+<h4>📘 Boxplots das Variáveis</h4>
+<p>
+Os boxplots permitem identificar:
+</p>
+<ul>
+<li>assimetria extrema nas distribuições,</li>
+<li>outliers estruturais (municípios industriais específicos),</li>
+<li>disparidades regionais elevadas.</li>
+</ul>
+<p>
+Este gráfico foi escolhido porque resume visualmente a desigualdade produtiva dos municípios, ajudando
+a compreender por que as transformações logarítmicas são necessárias e por que o modelo Gamma é adequado.
 </p>
 </div>
 """, unsafe_allow_html=True)
@@ -166,27 +308,163 @@ with tab_diag:
     st.markdown('<div class="section">', unsafe_allow_html=True)
     st.subheader("Diagnósticos do Modelo")
 
+    # =====================================================
+    # 1) Construção da base final usada nos diagnósticos
+    # =====================================================
     df_final = df.copy()
 
+    # Previsões e resíduos
     X = df_final[["log_caminhao", "log_ciclomotor", "log_automovel"]].values
     log_mu = alpha0_mean + X @ post_beta_mean
     df_final["y_hat"] = np.exp(log_mu)
+
     df_final["resid"] = df_final["vl_industria"] - df_final["y_hat"]
     df_final["erro_abs"] = df_final["resid"].abs()
+    df_final["erro_pct"] = 100 * df_final["resid"] / df_final["vl_industria"]
 
+    # =============================================================================
+    # GRÁFICO 1 — OBSERVADO × PREVISTO (com escala de erro)
+    # =============================================================================
     fig = go.Figure()
+
     fig.add_trace(go.Scatter(
         x=df_final["vl_industria"],
         y=df_final["y_hat"],
         mode="markers",
-        marker=dict(color=df_final["erro_abs"], colorscale="RdBu_r"),
+        marker=dict(
+            size=7,
+            color=df_final["erro_abs"],
+            colorscale="RdYlBu_r",
+            colorbar=dict(title="Erro absoluto"),
+            opacity=0.75
+        ),
+        text=df_final.get("nome_municipio", None),
+        hovertemplate=(
+            "<b>PIB Industrial Observado:</b> %{x:,.0f}<br>"
+            "<b>Previsto:</b> %{y:,.0f}<br>"
+            "<b>Erro Absoluto:</b> %{marker.color:,.0f}<br>"
+            "<extra></extra>"
+        )
     ))
-    max_val = df_final[["vl_industria", "y_hat"]].max().max()
-    fig.add_trace(go.Scatter(x=[0, max_val], y=[0, max_val], mode="lines", line=dict(dash="dash")))
-    fig.update_layout(template=PLOTLY_TEMPLATE, title="Observado × Previsto")
-    st.plotly_chart(fig, use_container_width=True)
 
+    max_val = df_final[["vl_industria", "y_hat"]].max().max()
+
+    fig.add_trace(
+        go.Scatter(
+            x=[0, max_val],
+            y=[0, max_val],
+            mode="lines",
+            line=dict(color="black", dash="dash"),
+            name="45° ideal"
+        )
+    )
+
+    fig.update_layout(
+        template=PLOTLY_TEMPLATE,
+        title="Observado × Previsto — Diagnóstico do Ajuste",
+        xaxis_title="PIB Industrial Observado",
+        yaxis_title="PIB Industrial Previsto",
+        height=600
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================================
+    # COMENTÁRIO — OBSERVADO × PREVISTO
+    # ================================
+    st.markdown("""
+<div class='section'>
+<h4>📘 Observado × Previsto</h4>
+<p>
+Este gráfico avalia a qualidade do ajuste do modelo Bayesiano Gamma ao comparar diretamente os valores
+observados do PIB industrial municipal com as previsões obtidas pela média posterior.
+A linha tracejada de 45° representa o cenário ideal de previsão perfeita.
+</p>
+
+<p>
+Os pontos coloridos indicam o <b>erro absoluto</b> de cada município. Quanto mais quente a cor, maior
+a discrepância entre o valor observado e o previsto. Esse tipo de visualização permite identificar:
+</p>
+
+<ul>
+<li>Municípios sub ou superestimados;</li>
+<li>Padrões estruturais — por exemplo, municípios industriais extremos;</li>
+<li>Possíveis outliers que influenciam a dispersão dos coeficientes.</li>
+</ul>
+
+<p>
+Esse gráfico é um dos diagnósticos centrais porque mostra o desempenho global do modelo, validando
+a adequação da estrutura log-linear para dados com forte assimetria e alta variabilidade entre municípios.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+
+    # =============================================================================
+    # GRÁFICO 2 — HISTOGRAMA DOS RESÍDUOS + KDE
+    # =============================================================================
+    st.markdown('<div class="section">', unsafe_allow_html=True)
+    st.subheader("Distribuição dos Resíduos")
+
+    fig_res = go.Figure()
+
+    fig_res.add_trace(go.Histogram(
+        x=df_final["resid"],
+        nbinsx=40,
+        histnorm="probability density",
+        opacity=0.55,
+        marker=dict(color="#C44E52"),
+        name="Resíduos"
+    ))
+
+    kde = gaussian_kde(df_final["resid"])
+    x_grid = np.linspace(df_final["resid"].min(), df_final["resid"].max(), 300)
+    fig_res.add_trace(go.Scatter(
+        x=x_grid,
+        y=kde(x_grid),
+        mode="lines",
+        line=dict(color="black"),
+        name="KDE"
+    ))
+
+    fig_res.update_layout(
+        template=PLOTLY_TEMPLATE,
+        title="Histograma dos Resíduos com Densidade KDE",
+        xaxis_title="Resíduo",
+        yaxis_title="Densidade"
+    )
+
+    st.plotly_chart(fig_res, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ================================
+    # COMENTÁRIO — HISTOGRAMA DOS RESÍDUOS
+    # ================================
+    st.markdown("""
+<div class='section'>
+<h4>📘 Distribuição dos Resíduos</h4>
+<p>
+Este gráfico permite analisar se os resíduos do modelo apresentam algum padrão sistemático.
+No contexto de um modelo Bayesiano Gamma com link log, não esperamos simetria perfeita —
+mas sim a ausência de padrões estruturados.
+</p>
+
+<p>
+O KDE suaviza a distribuição e ajuda a verificar:
+</p>
+<ul>
+<li>cauda longa típica de dados econômicos municipais,</li>
+<li>resíduos concentrados próximos de zero (esperado),</li>
+<li>eventuais municípios que escapam da tendência central.</li>
+</ul>
+
+<p>
+A inspeção visual confirma que o modelo captura bem a forma global do PIB industrial,
+apesar da heterogeneidade regional inerente ao problema.
+</p>
+</div>
+""", unsafe_allow_html=True)
 
 # =============================================================================
 # TAB 4 — INTERPRETAÇÃO
